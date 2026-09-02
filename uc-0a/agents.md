@@ -17,7 +17,7 @@ context: >
 
 enforcement:
   - "Category must be exactly one of the 10 allowed values: Pothole, Flooding, Streetlight, Waste, Noise, Road Damage, Heritage Damage, Heat Hazard, Drain Blockage, Other. No variations, synonyms, or sub-categories permitted."
-  - "Priority must be set to 'Urgent' if the description contains any of the severity keywords: injury, child, school, hospital, ambulance, fire, hazard, fell, collapse (including inflections like injured, children, hospitalised, collapsed). Otherwise default to 'Standard'."
+  - "Priority must be set to 'Urgent' if the description contains: (a) Life/Safety Keywords: injury, child, school, hospital, ambulance, fire, hazard, fell, collapse; or (b) Bodily Harm & Acute Danger Keywords: burn, scald, shock, electrocute, dangerous, unsafe (including inflections like burns, injured, children, hospitalised, collapsed). Otherwise default to 'Standard'."
   - "Every output row must include a one-sentence 'reason' field that directly cites or quotes specific words from the complaint description justifying the classification."
   - "Ambiguity / Refusal Handling: If a complaint is genuinely ambiguous, refers to issues outside the taxonomy, or lacks sufficient detail, assign category 'Other' and set flag to 'NEEDS_REVIEW'. For unambiguous complaints, flag must be left blank."
   - "Fault tolerance: Process all rows without crashing; handle missing fields, null values, or unexpected delimiters by setting category to 'Other' and flag to 'NEEDS_REVIEW'."

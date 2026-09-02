@@ -24,7 +24,7 @@ ALLOWED_CATEGORIES = [
 
 ALLOWED_PRIORITIES = ["Urgent", "Standard", "Low"]
 
-# Severity keywords triggering Urgent priority
+# Severity keywords triggering Urgent priority (Life/Safety + Bodily Harm & Acute Danger)
 SEVERITY_PATTERNS = [
     r"\binjur(y|ies|ed)?\b",
     r"\bchild(ren)?\b",
@@ -35,6 +35,11 @@ SEVERITY_PATTERNS = [
     r"\bhazard(s|ous)?\b",
     r"\bfell\b",
     r"\bcollapse(d|s)?\b",
+    r"\bburn(s|ed|ing|t)?\b",
+    r"\bdanger(ous)?\b",
+    r"\bunsafe\b",
+    r"\belectrocut(e|ed|ion)?\b",
+    r"\bscal(d|ded|ding)?\b",
 ]
 
 
@@ -55,7 +60,6 @@ def determine_category(text: str, location: str = "") -> Tuple[str, str, bool]:
     """
     t = text.lower()
     loc = location.lower()
-    combined = f"{t} {loc}"
 
     # Priority 1: Specific distinct categories
     if "pothole" in t or "potholes" in t:
