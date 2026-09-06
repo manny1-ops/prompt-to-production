@@ -14,7 +14,9 @@ import sys
 from typing import Dict, List
 
 EXPECTED_COLUMNS = ["period", "ward", "category", "budgeted_amount", "actual_spend", "notes"]
-SUPPORTED_GROWTH_TYPES = ["MoM", "YoY"]
+# MoM is the ONLY supported growth type for this dataset (single year of data).
+# YoY is intentionally unsupported and will be refused.
+SUPPORTED_GROWTH_TYPES = ["MoM"]
 
 
 class RefusalError(Exception):
@@ -84,7 +86,11 @@ def _month_delta(period: str, months: int) -> str | None:
 
 def compute_growth(rows: List[dict], ward: str, category: str,
                    growth_type: str) -> List[dict]:
-    """Per-period growth table for a single ward + category with formula shown."""
+    """Per-period growth table for a single ward + category with formula shown.
+
+    UC-0C supports MoM only. growth_type has already been validated as MoM by
+    _validate_scope; this branch exists for future extension.
+    """
     if growth_type not in SUPPORTED_GROWTH_TYPES:
         raise RefusalError(
             f"Unsupported growth type '{growth_type}'. Supported: {SUPPORTED_GROWTH_TYPES}. "
@@ -148,23 +154,28 @@ def compute_growth(rows: List[dict], ward: str, category: str,
 # Refusals per enforcement rules
 # ---------------------------------------------------------------------------
 def _validate_scope(args, dataset: Dict[str, object]):
+    """Enforce zero implicit defaults: refuse on ANY missing calculation parameter."""
+    missing, hints = [], []
     if not args.ward:
-        raise RefusalError(
-            "REFUSED: '--ward' not specified. Computing growth requires a single ward; "
-            "all-ward aggregation is forbidden. Pass --ward with one of: "
-            + ", ".join(dataset["wards"]))
+        missing.append("--ward")
+        hints.append("--ward (e.g. 'Ward 1 – Kasba')")
     if not args.category:
-        raise RefusalError(
-            "REFUSED: '--category' not specified. All-category aggregation is forbidden. "
-            "Pass --category with one of: " + ", ".join(dataset["categories"]))
+        missing.append("--category")
+        hints.append("--category (e.g. 'Roads & Pothole Repair')")
     if not args.growth_type:
+        missing.append("--growth-type")
+        hints.append(f"--growth-type (e.g. {SUPPORTED_GROWTH_TYPES[0]})")
+    if missing:
         raise RefusalError(
-            "REFUSED: '--growth-type' not specified. Refusing rather than guessing. "
-            f"Pass one of: {SUPPORTED_GROWTH_TYPES}")
+            "REFUSED: missing required parameter(s): "
+            + ", ".join(missing)
+            + ". NO implicit defaults permitted — please specify "
+            + ", ".join(hints) + " and re-run.")
     if args.growth_type not in SUPPORTED_GROWTH_TYPES:
         raise RefusalError(
             f"REFUSED: unsupported growth type '{args.growth_type}'. "
-            f"Supported: {SUPPORTED_GROWTH_TYPES}")
+            f"Valid choices: {SUPPORTED_GROWTH_TYPES}. Please re-run with "
+            f"--growth-type {SUPPORTED_GROWTH_TYPES[0]}.")
     if args.ward not in dataset["wards"]:
         raise RefusalError(
             f"REFUSED: unknown ward '{args.ward}'. Valid wards: "
