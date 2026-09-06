@@ -47,6 +47,8 @@ CATEGORY_TERMS: Dict[str, Dict[str, int]] = {
     "Noise": {
         "noise": 2, "music": 2, "drilling": 2, "amplifier": 2,
         "amplifiers": 2, "idling": 1, "engines on": 1,
+        "wedding band": 2, "band playing": 2, "playing music": 2,
+        "loud": 2, "blaring": 2, "honking": 2, "shouting": 2,
     },
     "Road Damage": {
         "road surface": 2, "road": 1, "footpath": 2, "paving": 2,
@@ -181,6 +183,18 @@ def determine_category(text: str) -> Tuple[str, bool]:
     return "Other", True
 
 
+def _matched_texts(description: str, patterns: List[str]) -> List[str]:
+    """Return the literal matched substrings for the given regex patterns."""
+    out: List[str] = []
+    for pattern in patterns:
+        m = re.search(pattern, description, re.I)
+        if m:
+            t = m.group(0).lower()
+            if t not in out:
+                out.append(t)
+    return out
+
+
 def determine_priority(text: str) -> str:
     if _has_regex_any(text, SEVERITY_PATTERNS):
         return "Urgent"
@@ -189,20 +203,32 @@ def determine_priority(text: str) -> str:
     return "Standard"
 
 
+def _priority_evidence(description: str, priority: str) -> List[str]:
+    if not description:
+        return []
+    if priority == "Urgent":
+        return _matched_texts(description, SEVERITY_PATTERNS)
+    if priority == "Low":
+        return _matched_texts(description, LOW_PATTERNS)
+    # Standard: quote caution signals that were evaluated but did not escalate.
+    return _matched_texts(description, CAUTION_PATTERNS)
+
+
 def reason_sentence(description: str, category: str, priority: str,
                     is_ambiguous: bool) -> str:
     evidence = _matched_terms(description, category) if category in CATEGORY_TERMS else []
+    pri_evidence = _priority_evidence(description, priority)
+    pri_note = ""
+    if pri_evidence:
+        pri_terms = ", ".join("'" + p + "'" for p in pri_evidence[:4])
+        pri_note = f" {priority.lower()} signal: {pri_terms}."
     if not is_ambiguous:
         if evidence:
             quoted = ", ".join(f"'{e}'" for e in evidence)
-            return (f"Classified {category} ({priority}) — evidence: {quoted}.")
-        return f"Classified {category} ({priority})."
+            return (f"Classified {category} ({priority}) — evidence: {quoted}.{pri_note}")
+        return f"Classified {category} ({priority}).{pri_note}"
     # Ambiguous / out-of-taxonomy row: quote the risk signal(s) that drove the review.
-    quoted_terms = []
-    for pattern in SEVERITY_PATTERNS + CAUTION_PATTERNS:
-        m = re.search(pattern, description, re.I)
-        if m and m.group(0).lower() not in quoted_terms:
-            quoted_terms.append(m.group(0).lower())
+    quoted_terms = _matched_texts(description, SEVERITY_PATTERNS + CAUTION_PATTERNS)
     if quoted_terms:
         quoted = ", ".join(f"'{t}'" for t in quoted_terms[:4])
         return (f"Ambiguous or out-of-taxonomy ({category}, {priority}) — "
