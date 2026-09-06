@@ -142,7 +142,8 @@ def _intents() -> List[dict]:
             "triggers": ["install", "installed", "software", "laptop", "slack",
                          "apps", "application"],
             "required": [],
-            "forbidden": [],
+            "forbidden": ["personal phone", "personal device", "own phone",
+                          "personal cell", "personal laptop", "byod"],
             "answer": ("Employees must not install software on corporate devices "
                        "without written approval from the IT Department "
                        "(policy_it_acceptable_use.txt §2.3). Software approved for "
@@ -150,21 +151,53 @@ def _intents() -> List[dict]:
                        "catalogue only (2.4)."),
         },
         {
+            "id": "personal_use_corporate_device",
+            "doc": "policy_it_acceptable_use.txt",
+            "sections": ["2.1", "2.2"],
+            "primary": ["company cell phone", "company phone", "company mobile",
+                        "corporate phone", "company laptop", "corporate laptop",
+                        "company device", "corporate device", "personal use",
+                        "corporate resources"],
+            "triggers": ["personal use", "phone", "mobile", "laptop", "device",
+                         "ticket", "flight", "flights", "game", "games",
+                         "browse", "shopping", "personal"],
+            "required": [],
+            "forbidden": ["install", "installed", "personal phone", "personal device",
+                          "personal cell", "personal mobile", "own phone",
+                          "personal laptop"],
+            "answer": ("Per policy_it_acceptable_use.txt: corporate devices (laptops, "
+                       "desktops, and mobile phones issued by CMC) must be used "
+                       "primarily for official work purposes (§2.1). Personal use of "
+                       "corporate devices is permitted in moderation, provided it "
+                       "does not interfere with work duties or consume excessive "
+                       "bandwidth (2.2)."),
+        },
+        {
             "id": "personal_device_access",
             "doc": "policy_it_acceptable_use.txt",
             "sections": ["3.1", "3.2", "3.4", "3.5"],
-            "triggers": ["personal phone", "personal device", "personal mobile",
-                         "own phone", "work files", "phone", "mobile"],
+            "primary": ["personal phone", "personal device", "personal mobile",
+                        "own phone", "personal cell phone", "personal cell",
+                        "personal laptop"],
+            "require_any": ["access", "email", "portal", "check", "read", "files",
+                            "connect", "login", "vpn", "wifi", "network"],
+            "triggers": ["personal phone", "personal cell phone", "personal cell",
+                         "personal device", "personal mobile", "own phone",
+                         "personal laptop", "phone", "mobile", "work files"],
             "required": [],
-            "forbidden": [],
+            "forbidden": ["install", "installed", "game", "games", "shopping",
+                          "book", "booking", "ticket", "flight"],
             "answer": ("Per policy_it_acceptable_use.txt: personal devices may be used "
                        "to access CMC email and the CMC employee self-service portal "
                        "only (§3.1); they must not be used to access, store, or "
-                       "transmit classified or sensitive CMC data (§3.2). For CMC "
-                       "email a device-level PIN or biometric lock must be enabled "
-                       "(§3.4), and a lost or stolen device must be reported to the IT "
-                       "helpdesk within 4 hours for remote wipe (§3.5). The documents "
-                       "do not authorise personal devices for general work files."),
+                       "transmit classified or sensitive CMC data (§3.2), and must "
+                       "not connect to the CMC internal network — the CMC Guest WiFi "
+                       "network is available for personal device internet access "
+                       "(3.3). For CMC email a device-level PIN or biometric lock "
+                       "must be enabled (§3.4), and a lost or stolen device must be "
+                       "reported to the IT helpdesk within 4 hours for remote wipe "
+                       "(§3.5). The documents do not authorise personal devices for "
+                       "general work files."),
         },
         {
             "id": "home_office_allowance",
@@ -174,7 +207,7 @@ def _intents() -> List[dict]:
             "triggers": ["home office", "equipment allowance", "work from home",
                          "wfh", "allowance", "desk", "monitor", "chair"],
             "required": [],
-            "forbidden": [],
+            "forbidden": ["appraisal", "performance", "promotion", "salary"],
             "answer": ("Employees approved for permanent work-from-home arrangements "
                        "are entitled to a one-time home office equipment allowance of "
                        "Rs 8,000 (policy_finance_reimbursement.txt §3.1). It covers "
@@ -204,7 +237,7 @@ def _intents() -> List[dict]:
         {
             "id": "lwp_approval",
             "doc": "policy_hr_leave.txt",
-            "sections": ["5.2", "5.3"],
+            "sections": ["5.2", "5.3", "5.4"],
             "triggers": ["leave without pay", "lwp", "unpaid leave"],
             "required": [],
             "forbidden": [],
@@ -212,21 +245,26 @@ def _intents() -> List[dict]:
                        "AND the HR Director; manager approval alone is not sufficient "
                        "(policy_hr_leave.txt §5.2). LWP exceeding 30 continuous days "
                        "requires additional approval from the Municipal Commissioner "
-                       "(5.3)."),
+                       "(5.3). Periods of LWP do not count toward service for "
+                       "seniority, increments, or retirement benefits (5.4)."),
         },
         {
-            "id": "sick_leave_certificate",
+            "id": "sick_leave",
             "doc": "policy_hr_leave.txt",
-            "sections": ["3.2", "3.4"],
-            "triggers": ["medical certificate", "doctor", "sick leave", "certificate"],
+            "sections": ["3.1", "3.2", "3.3", "3.4"],
+            "triggers": ["sick leave", "sick day", "sick days", "medical certificate",
+                         "doctor", "certificate", "illness", "sick"],
             "required": [],
-            "forbidden": ["encash", "encashment"],
-            "answer": ("Sick leave of 3 or more consecutive days requires a medical "
-                       "certificate from a registered medical practitioner, submitted "
-                       "within 48 hours of returning to work (policy_hr_leave.txt "
-                       "§3.2). Sick leave taken immediately before or after a public "
-                       "holiday or annual leave period requires a medical certificate "
-                       "regardless of duration (3.4)."),
+            "forbidden": ["encash", "encashment", "carry forward", "carried forward",
+                          "roll over"],
+            "answer": ("Each employee is entitled to 12 days of paid sick leave per "
+                       "calendar year (policy_hr_leave.txt §3.1). Sick leave of 3 or "
+                       "more consecutive days requires a medical certificate from a "
+                       "registered medical practitioner, submitted within 48 hours of "
+                       "returning to work (3.2). Sick leave cannot be carried forward "
+                       "to the following year (3.3), and sick leave taken immediately "
+                       "before or after a public holiday or annual leave period "
+                       "requires a medical certificate regardless of duration (3.4)."),
         },
         {
             "id": "maternity_leave",
@@ -286,9 +324,11 @@ def _intents() -> List[dict]:
             "id": "mobile_internet_reimbursement",
             "doc": "policy_finance_reimbursement.txt",
             "sections": ["5.1", "5.2", "5.3"],
+            "primary": ["mobile phone", "internet", "bill", "claim",
+                        "reimbursement"],
             "triggers": ["mobile phone", "internet", "mobile", "bill", "reimbursement"],
             "required": [],
-            "forbidden": [],
+            "forbidden": ["install", "game", "games"],
             "answer": ("Employees in Grade C and above are entitled to a monthly mobile "
                        "phone reimbursement of Rs 500 (policy_finance_reimbursement.txt "
                        "§5.1). Employees in Grade B and above are entitled to a monthly "
@@ -394,6 +434,9 @@ def _intents() -> List[dict]:
 def _score_intent(query_norm: str, intent: dict) -> int:
     if not all(_trigger_match(query_norm, t) for t in intent["required"]):
         return 0
+    if intent.get("require_any") and not any(
+            _trigger_match(query_norm, t) for t in intent["require_any"]):
+        return 0
     if any(_trigger_match(query_norm, t) for t in intent["forbidden"]):
         return 0
     primary = intent.get("primary", intent["triggers"])
@@ -466,6 +509,23 @@ TESTS = [
      "must_not_have": []},
     {"q": "Who approves leave without pay?",
      "answer": True, "must_have": ["Department Head", "HR Director"],
+     "must_not_have": []},
+    {"q": "Am I allowed to book flight tickets using my company cell phone?",
+     "answer": True, "must_have": ["permitted in moderation", "2.2"],
+     "must_not_have": ["may be used to access CMC email"]},
+    {"q": "Can I take multiple sick leaves?",
+     "answer": True, "must_have": ["12 days"],
+     "must_not_have": []},
+    {"q": "If I regularly work from home, will it affect my performance appraisal?",
+     "answer": False},
+    {"q": "Can I install mobile games on my company cell phone?",
+     "answer": True, "must_have": ["written approval", "2.3"],
+     "must_not_have": ["may be used to access CMC email"]},
+    {"q": "My company cell phone is not working and I am working from home. "
+          "Can I access company files using my personal cell phone?",
+     "answer": True,
+     "must_have": ["must not be used to access, store, or transmit classified or "
+                   "sensitive CMC data"],
      "must_not_have": []},
 ]
 
