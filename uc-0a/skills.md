@@ -1,12 +1,24 @@
 skills:
   - name: classify_complaint
-    description: Classifies a single citizen complaint into a standardized municipal category, evaluates severity triggers for priority, provides an evidence-based reason quoting description words, and flags ambiguity.
-    input: A dictionary representing a single CSV row with keys 'complaint_id', 'description', and optional metadata fields ('city', 'ward', 'location', 'reported_by', 'days_open').
-    output: A dictionary with keys 'complaint_id' (str), 'category' (str: one of 10 allowed categories), 'priority' (str: Urgent, Standard, or Low), 'reason' (str: single sentence citing description words), and 'flag' (str: 'NEEDS_REVIEW' or empty string).
-    error_handling: When the description is empty, corrupted, or genuinely ambiguous, sets category to 'Other', priority to 'Standard', reason citing missing/unclear data, and flag to 'NEEDS_REVIEW'.
+    description: Classifies a single citizen complaint row into an exact taxonomy category by scoring its curated root-term maps over the description text (strong=2, weak=1), computing priority from the severity/caution/Low model, composing a one-sentence evidence-quoting reason, and setting the NEEDS_REVIEW flag only for genuinely ambiguous or out-of-taxonomy cases.
+    input: A dictionary representing one CSV row with 'complaint_id' and 'description' (other fields such as 'city', 'ward', 'location', 'reported_by', 'days_open' are not used for classification).
+    output: A dictionary with keys 'complaint_id' (str, preserved from input), 'category' (str, one of the 10 allowed values), 'priority' (str: Urgent/Standard/Low), 'reason' (str: single sentence quoting matched evidence terms), and 'flag' (str: 'NEEDS_REVIEW' or empty).
+    error_handling: Empty, corrupted, or genuinely ambiguous descriptions yield 'Other' + 'Standard' (or severity-based priority when the missing-text row still trips a severity signal) + 'NEEDS_REVIEW', with a reason stating why; never crashes.
+
+  - name: validate_result
+    description: Checks a classified row against the full enforcement contract (schema membership, Urgent-IFF-severity bijection, evidence citation present in the row's own description, NEEDS_REVIEW only when ambiguous, preserved complaint_id) and returns the list of violations.
+    input: classified_row (dict) and its source description (str).
+    output: A list of violation strings; an empty list means the row is compliant.
+    error_handling: No side effects; every check is reported as a string so the caller can decide the batch outcome.
 
   - name: batch_classify
-    description: Reads an input CSV file of municipal complaints, applies classify_complaint to each row, validates output consistency against the taxonomy schema, and writes the results to a target CSV file.
-    input: input_path (str: path to input CSV file) and output_path (str: path to write results CSV file).
-    output: Writes a structured CSV file with columns [complaint_id, category, priority, reason, flag] and prints completion status.
-    error_handling: Handles missing input files, missing columns, and bad rows gracefully without terminating the execution loop, logging errors and ensuring output CSV generation for all valid records.
+    description: Reads the input CSV, classifies every row with classify_complaint, runs validate_result on every row, and writes the results CSV only when the ENTIRE batch is compliant (row count equal as well). Prints a summary of category/priority/flag counts on success.
+    input: input_path (str) and output_path (str).
+    output: UTF-8 CSV with header [complaint_id, category, priority, reason, flag]; raises SystemExit(1) after printing all violations to stderr and does NOT write any file when validation fails.
+    error_handling: Missing input file raises FileNotFoundError; creating the output directory happens only after validation passes, so a failed batch leaves no partial artifact.
+
+  - name: run_self_check
+    description: Non-destructive verification that classifies all four known city test files (ahmedabad, pune, hyderabad, kolkata) in memory and confirms every row passes validate_result and the expected row counts, printing per-city PASS/FAIL and returning a failure count.
+    input: None (uses the known ../data/city-test-files paths).
+    output: Prints a per-city PASS/FAIL summary plus overall exit-code semantics (0 = all pass, others = failure count).
+    error_handling: A missing fixture file is reported as FAIL for that city rather than crashing.
